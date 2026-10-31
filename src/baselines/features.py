@@ -68,6 +68,8 @@ def extract(model_name: str, rows: list[dict], root: Path, batch_size: int = 32,
             f = torch.cat([h[:, 0], h[:, 1:].mean(1)], dim=1)
         else:
             f = model.get_image_features(pixel_values=pixel_values)
+            if not torch.is_tensor(f):  # transformers 5는 출력 객체를 돌려준다
+                f = f.pooler_output
         f = torch.nn.functional.normalize(f.float(), dim=1)
         feats.append(f.cpu().numpy())
         done += len(pixel_values)

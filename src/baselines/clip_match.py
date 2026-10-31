@@ -36,6 +36,8 @@ def text_embeddings(lex: dict, device: str = "cuda") -> dict[tuple[str, str], np
             texts.append(TEMPLATE.format(product=p["name_en"], definition=d["definition_en"]))
     inputs = tok(texts, padding="max_length", truncation=True, max_length=64, return_tensors="pt").to(device)
     emb = model.get_text_features(**inputs)
+    if not torch.is_tensor(emb):  # transformers 5는 출력 객체를 돌려준다
+        emb = emb.pooler_output
     emb = torch.nn.functional.normalize(emb.float(), dim=1).cpu().numpy()
     return {p: e for p, e in zip(pairs, emb)}
 
