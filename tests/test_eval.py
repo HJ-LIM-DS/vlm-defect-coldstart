@@ -8,7 +8,7 @@ from src.eval.stats import holm, mcnemar, paired_bootstrap, product_mean
 
 
 def _rows():
-    scope = {("a", "crack"): "shared", ("a", "x"): "unique", ("b", "crack"): "shared"}
+    scope = {("a", "crack"): "shared", ("a", "x"): "unique", ("b", "crack"): "shared", ("b", "hole"): "unique"}
     rows = [
         {"image_id": "a1", "category": "a", "label": "defect", "defect_type": "crack", "pred_key": "crack", "format_ok": True},
         {"image_id": "a2", "category": "a", "label": "defect", "defect_type": "crack", "pred_key": "x", "format_ok": True},
