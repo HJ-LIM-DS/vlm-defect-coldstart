@@ -1,0 +1,16 @@
+category,kind,fold
+bottle,object,1
+cable,object,1
+capsule,object,2
+carpet,texture,1
+grid,texture,2
+hazelnut,object,2
+leather,texture,3
+metal_nut,object,3
+pill,object,3
+screw,object,4
+tile,texture,4
+toothbrush,object,4
+transistor,object,5
+wood,texture,5
+zipper,object,5

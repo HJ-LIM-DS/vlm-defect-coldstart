@@ -1,0 +1,29 @@
+# 데이터셋 (CC BY-NC-SA 4.0, 재배포하지 않음). 인덱스와 분할은 이미지 ID와 라벨만 담으므로 저장소에 남긴다.
+data/*
+!data/index.csv
+!data/splits.csv
+!data/lexicon_coverage.csv
+
+# 학습·추론 산출물
+/outputs/
+/checkpoints/
+/runs/
+/ops/runtime/
+/mlruns/
+
+# 지원 공고 원문, 개인 참고 자료, 작업 노트 (공개 저장소에 넣지 않음)
+task.txt
+references/
+notes/
+
+# 로컬 환경
+.claude/
+CLAUDE.md
+ops/venv_setup.log
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# 포트폴리오 빌드 중간 산출물
+reports/portfolio/*.html

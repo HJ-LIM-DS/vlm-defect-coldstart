@@ -1,0 +1,9 @@
+[project]
+name = "vlm-defect-coldstart"
+version = "0.1.0"
+description = "결함 사전 텍스트만 주고 처음 보는 제품의 결함 유형을 맞히는 LoRA 적응 VLM (MVTec AD)"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

@@ -1,0 +1,74 @@
+category,defect_type,name_ko,scope,n_products_with_key,n_test_images
+bottle,broken_large,큰 파손,unique,1,20
+bottle,broken_small,작은 파손,unique,1,22
+bottle,contamination,이물 혼입,shared,2,21
+cable,bent_wire,심선 휨,unique,1,13
+cable,cable_swap,케이블 자리 바뀜,unique,1,12
+cable,combined,복합 결함,shared,4,11
+cable,cut_inner_insulation,내부 피복 절단,unique,1,14
+cable,cut_outer_insulation,외부 피복 절단,unique,1,10
+cable,missing_cable,케이블 누락,unique,1,12
+cable,missing_wire,심선 누락,unique,1,10
+cable,poke_insulation,피복 찔림,unique,1,10
+capsule,crack,균열,shared,4,23
+capsule,faulty_imprint,인쇄 불량,shared,2,22
+capsule,poke,찔림,shared,2,21
+capsule,scratch,긁힘,shared,4,23
+capsule,squeeze,눌림 변형,unique,1,20
+carpet,color,색 얼룩,shared,5,19
+carpet,cut,베임,shared,3,17
+carpet,hole,구멍,shared,3,17
+carpet,metal_contamination,금속 이물,shared,2,17
+carpet,thread,실 풀림,shared,2,19
+grid,bent,휨,shared,2,12
+grid,broken,끊어짐,unique,1,12
+grid,glue,접착제 잔류,shared,2,11
+grid,metal_contamination,금속 이물,shared,2,11
+grid,thread,실 끼임,shared,2,11
+hazelnut,crack,균열,shared,4,18
+hazelnut,cut,베임,shared,3,17
+hazelnut,hole,구멍,shared,3,18
+hazelnut,print,인쇄 자국,unique,1,17
+leather,color,색 얼룩,shared,5,19
+leather,cut,베임,shared,3,19
+leather,fold,접힘,unique,1,17
+leather,glue,접착제 잔류,shared,2,19
+leather,poke,찔림,shared,2,18
+metal_nut,bent,휨,shared,2,25
+metal_nut,color,변색,shared,5,22
+metal_nut,flip,뒤집힘,unique,1,23
+metal_nut,scratch,긁힘,shared,4,23
+pill,color,색 이상,shared,5,25
+pill,combined,복합 결함,shared,4,17
+pill,contamination,이물 부착,shared,2,21
+pill,crack,균열,shared,4,26
+pill,faulty_imprint,인쇄 불량,shared,2,19
+pill,pill_type,종류 다름,unique,1,9
+pill,scratch,긁힘,shared,4,24
+screw,manipulated_front,끝단 손상,unique,1,24
+screw,scratch_head,머리 긁힘,unique,1,24
+screw,scratch_neck,목 긁힘,unique,1,25
+screw,thread_side,측면 나사산 손상,unique,1,23
+screw,thread_top,상단 나사산 손상,unique,1,23
+tile,crack,균열,shared,4,17
+tile,glue_strip,접착제 띠,unique,1,18
+tile,gray_stroke,회색 줄,unique,1,16
+tile,oil,기름 얼룩,unique,1,18
+tile,rough,거친 면,shared,2,15
+toothbrush,defective,칫솔모 결함,unique,1,30
+transistor,bent_lead,다리 휨,unique,1,10
+transistor,cut_lead,다리 절단,unique,1,10
+transistor,damaged_case,몸체 손상,unique,1,10
+transistor,misplaced,위치 이탈,unique,1,10
+wood,color,색 얼룩,shared,5,8
+wood,combined,복합 결함,shared,4,11
+wood,hole,구멍,shared,3,10
+wood,liquid,액체 얼룩,unique,1,10
+wood,scratch,긁힘,shared,4,21
+zipper,broken_teeth,이빨 파손,unique,1,19
+zipper,combined,복합 결함,shared,4,16
+zipper,fabric_border,가장자리 천 손상,unique,1,17
+zipper,fabric_interior,안쪽 천 손상,unique,1,16
+zipper,rough,이빨 거침,shared,2,17
+zipper,split_teeth,이빨 벌어짐,unique,1,18
+zipper,squeezed_teeth,이빨 눌림,unique,1,16

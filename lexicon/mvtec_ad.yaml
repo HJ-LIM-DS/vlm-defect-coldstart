@@ -1,0 +1,426 @@
+# 결함 사전: MVTec AD 15개 제품의 정상 규격과 결함 유형별 한 줄 정의.
+#
+# 작성 규칙
+# - 테스트 이미지를 열어 보기 전에 썼다. 근거는 폴더 이름(결함 유형 이름)과 원 논문
+#   (Bergmann et al., "The MVTec Anomaly Detection Dataset", IJCV 2021)의 서술뿐이다.
+#   이미지를 보고 정의를 다듬으면 평가 집합의 정보가 프롬프트로 새기 때문이다.
+# - 정의는 "무엇이 어떻게 잘못됐는가"를 한 문장으로 쓴다. 위치나 크기 같은 이미지별 세부는 쓰지 않는다.
+# - 유형 키(key)는 폴더 이름 그대로다. 같은 키가 두 제품 이상에 있으면 공통 유형, 한 제품에만 있으면 고유 유형으로
+#   보며, 이 구분은 src/data/lexicon.py 가 키 일치로 자동 계산한다(사람이 고르지 않는다).
+# - name_ko 는 출력 2줄에 쓰는 한국어 표시 이름이다. 제품 안에서 서로 달라야 한다.
+# - definition_en 은 영어 텍스트 인코더(SigLIP, CLIP) 기준선에 쓰는 같은 뜻의 영어 문장이다. VLM 프롬프트는 한국어 정의를 쓴다.
+
+version: 1
+
+products:
+  bottle:
+    name_ko: 유리병
+    name_en: glass bottle
+    kind: object
+    normal: 투명한 유리병을 위에서 내려다본 모습. 입구 테두리가 매끈한 원이고 이물이 없다.
+    normal_en: a transparent glass bottle seen from above, with a smooth round rim and no foreign matter
+    defects:
+      broken_large:
+        name_ko: 큰 파손
+        definition: 병 입구나 몸체의 큰 조각이 깨져 떨어져 나갔다.
+        definition_en: a large piece of the bottle rim or body is broken off
+      broken_small:
+        name_ko: 작은 파손
+        definition: 병 입구 테두리의 작은 조각이 깨졌다.
+        definition_en: a small chip is broken out of the bottle rim
+      contamination:
+        name_ko: 이물 혼입
+        definition: 병 안이나 입구에 제품이 아닌 이물질이 들어 있다.
+        definition_en: foreign material is inside the bottle or on its opening
+
+  cable:
+    name_ko: 케이블
+    name_en: three-wire cable
+    kind: object
+    normal: 세 가닥의 절연 케이블 단면. 각 가닥은 정해진 색의 피복과 온전한 구리 심선을 갖고 서로 정해진 자리에 있다.
+    normal_en: a cross section of a cable with three insulated wires, each with its own color and intact copper core in its fixed position
+    defects:
+      bent_wire:
+        name_ko: 심선 휨
+        definition: 구리 심선 가닥이 구부러지거나 흐트러져 피복 밖으로 튀어나왔다.
+        definition_en: copper wire strands are bent or splayed out of the insulation
+      cable_swap:
+        name_ko: 케이블 자리 바뀜
+        definition: 같은 색의 케이블이 둘 있거나 색 배치가 정해진 자리와 다르다.
+        definition_en: two wires have the same color or the wire colors are in the wrong positions
+      combined:
+        name_ko: 복합 결함
+        definition: 두 가지 이상의 결함이 한 이미지에 함께 있다.
+        definition_en: two or more different defects appear together
+      cut_inner_insulation:
+        name_ko: 내부 피복 절단
+        definition: 심선을 감싼 안쪽 피복이 잘려 있다.
+        definition_en: the inner insulation around a wire is cut
+      cut_outer_insulation:
+        name_ko: 외부 피복 절단
+        definition: 바깥쪽 피복이 잘리거나 벗겨져 있다.
+        definition_en: the outer insulation is cut or peeled
+      missing_cable:
+        name_ko: 케이블 누락
+        definition: 세 가닥 중 한 가닥이 통째로 없다.
+        definition_en: one of the three wires is entirely missing
+      missing_wire:
+        name_ko: 심선 누락
+        definition: 피복 안의 구리 심선이 없거나 일부가 빠져 있다.
+        definition_en: the copper wire inside the insulation is missing or partly absent
+      poke_insulation:
+        name_ko: 피복 찔림
+        definition: 피복에 뾰족한 것으로 찌른 구멍이나 눌린 자국이 있다.
+        definition_en: the insulation has a hole or dent poked by a sharp object
+
+  capsule:
+    name_ko: 캡슐
+    name_en: capsule pill
+    kind: object
+    normal: 검은 바탕 위에 옆으로 놓인 두 색 캡슐 약. 표면이 매끈하고 인쇄 글자가 또렷하다.
+    normal_en: a two-colored capsule lying sideways on a dark background, with a smooth surface and clear printed text
+    defects:
+      crack:
+        name_ko: 균열
+        definition: 캡슐 껍질에 금이 가거나 갈라졌다.
+        definition_en: the capsule shell is cracked or split
+      faulty_imprint:
+        name_ko: 인쇄 불량
+        definition: 캡슐에 인쇄된 글자가 일부 빠졌거나 번지거나 틀렸다.
+        definition_en: the printed text on the capsule is missing, smeared, or wrong
+      poke:
+        name_ko: 찔림
+        definition: 캡슐 표면에 뾰족한 것으로 찌른 구멍이나 패인 자국이 있다.
+        definition_en: the capsule surface has a hole or dent poked by a sharp object
+      scratch:
+        name_ko: 긁힘
+        definition: 캡슐 표면에 가늘고 긴 긁힌 자국이 있다.
+        definition_en: the capsule surface has a thin long scratch
+      squeeze:
+        name_ko: 눌림 변형
+        definition: 캡슐이 눌려 찌그러지거나 모양이 변형됐다.
+        definition_en: the capsule is squeezed and deformed
+
+  carpet:
+    name_ko: 카펫
+    name_en: carpet
+    kind: texture
+    normal: 균일한 직조 무늬의 카펫 표면. 색과 결이 전체적으로 고르다.
+    normal_en: a carpet surface with a uniform woven pattern and even color
+    defects:
+      color:
+        name_ko: 색 얼룩
+        definition: 주변과 색이 다른 얼룩이나 변색 부위가 있다.
+        definition_en: a stain or discolored area differs in color from its surroundings
+      cut:
+        name_ko: 베임
+        definition: 표면이 날카롭게 베여 틈이 생겼다.
+        definition_en: the surface has a sharp cut with a gap
+      hole:
+        name_ko: 구멍
+        definition: 표면이 뚫려 바탕이 보이는 구멍이 있다.
+        definition_en: a hole goes through the surface exposing the backing
+      metal_contamination:
+        name_ko: 금속 이물
+        definition: 섬유 사이에 금속 조각이 박혀 있다.
+        definition_en: a piece of metal is stuck between the fibers
+      thread:
+        name_ko: 실 풀림
+        definition: 풀린 실이나 다른 실 가닥이 표면 위에 얹혀 있다.
+        definition_en: a loose thread or a foreign thread lies on the surface
+
+  grid:
+    name_ko: 금속 격자
+    name_en: metal grid
+    kind: texture
+    normal: 규칙적인 금속 격자망. 선이 곧고 간격이 일정하며 이물이 없다.
+    normal_en: a regular metal grid with straight bars, even spacing, and no foreign matter
+    defects:
+      bent:
+        name_ko: 휨
+        definition: 격자 선이 구부러져 규칙적인 간격이 깨졌다.
+        definition_en: grid bars are bent and the regular spacing is broken
+      broken:
+        name_ko: 끊어짐
+        definition: 격자 선이 끊어져 틈이 생겼다.
+        definition_en: a grid bar is broken leaving a gap
+      glue:
+        name_ko: 접착제 잔류
+        definition: 격자 위에 접착제 덩어리나 막이 붙어 있다.
+        definition_en: a blob or film of glue sticks to the grid
+      metal_contamination:
+        name_ko: 금속 이물
+        definition: 격자 위에 금속 조각이 얹혀 있다.
+        definition_en: a piece of metal lies on the grid
+      thread:
+        name_ko: 실 끼임
+        definition: 격자 사이에 실이나 섬유 가닥이 끼어 있다.
+        definition_en: a thread or fiber is caught in the grid
+
+  hazelnut:
+    name_ko: 헤이즐넛
+    name_en: hazelnut
+    kind: object
+    normal: 검은 바탕 위의 헤이즐넛 한 알. 껍질이 온전하고 표면에 글자나 상처가 없다.
+    normal_en: a single hazelnut on a dark background with an intact shell and no marks
+    defects:
+      crack:
+        name_ko: 균열
+        definition: 껍질에 금이 가거나 갈라졌다.
+        definition_en: the shell is cracked or split
+      cut:
+        name_ko: 베임
+        definition: 껍질이 날카롭게 베여 자국이 났다.
+        definition_en: the shell has a sharp cut mark
+      hole:
+        name_ko: 구멍
+        definition: 껍질에 뚫린 구멍이 있다.
+        definition_en: the shell has a hole in it
+      print:
+        name_ko: 인쇄 자국
+        definition: 껍질 표면에 잉크나 인쇄 자국이 묻어 있다.
+        definition_en: ink or printed marks are on the shell surface
+
+  leather:
+    name_ko: 가죽
+    name_en: leather
+    kind: texture
+    normal: 균일한 결의 가죽 표면. 색이 고르고 접힘이나 상처가 없다.
+    normal_en: a leather surface with uniform grain, even color, and no folds or marks
+    defects:
+      color:
+        name_ko: 색 얼룩
+        definition: 주변과 색이 다른 얼룩이나 변색 부위가 있다.
+        definition_en: a stain or discolored area differs in color from its surroundings
+      cut:
+        name_ko: 베임
+        definition: 표면이 날카롭게 베여 틈이 생겼다.
+        definition_en: the surface has a sharp cut with a gap
+      fold:
+        name_ko: 접힘
+        definition: 가죽이 접혀 주름이나 접힌 선이 남았다.
+        definition_en: the leather was folded leaving a crease line
+      glue:
+        name_ko: 접착제 잔류
+        definition: 표면에 접착제가 묻어 광택이나 덩어리가 보인다.
+        definition_en: glue on the surface shows as a shiny patch or blob
+      poke:
+        name_ko: 찔림
+        definition: 뾰족한 것으로 찔러 생긴 작은 구멍이나 패인 자국이 있다.
+        definition_en: a small hole or dent was poked by a sharp object
+
+  metal_nut:
+    name_ko: 금속 너트
+    name_en: metal nut
+    kind: object
+    normal: 검은 바탕 위의 금속 너트 한 개. 정해진 면이 위를 향하고 날개가 온전하며 색이 고르다.
+    normal_en: a single metal nut on a dark background, right side up, with intact wings and uniform color
+    defects:
+      bent:
+        name_ko: 휨
+        definition: 너트의 날개나 가장자리가 구부러졌다.
+        definition_en: a wing or edge of the nut is bent
+      color:
+        name_ko: 변색
+        definition: 표면 일부가 다른 색으로 칠해지거나 변색됐다.
+        definition_en: part of the surface is painted or discolored
+      flip:
+        name_ko: 뒤집힘
+        definition: 너트가 뒤집혀 반대 면이 위를 향한다.
+        definition_en: the nut is flipped upside down
+      scratch:
+        name_ko: 긁힘
+        definition: 표면에 가늘고 긴 긁힌 자국이 있다.
+        definition_en: the surface has a thin long scratch
+
+  pill:
+    name_ko: 알약
+    name_en: pill
+    kind: object
+    normal: 검은 바탕 위의 타원형 알약 한 알. 흰 바탕에 붉은 반점이 있고 인쇄 글자가 또렷하다.
+    normal_en: a single oval white pill with red speckles on a dark background and clear printed text
+    defects:
+      color:
+        name_ko: 색 이상
+        definition: 알약 표면에 정상과 다른 색의 얼룩이 있다.
+        definition_en: the pill surface has a spot of abnormal color
+      combined:
+        name_ko: 복합 결함
+        definition: 두 가지 이상의 결함이 한 이미지에 함께 있다.
+        definition_en: two or more different defects appear together
+      contamination:
+        name_ko: 이물 부착
+        definition: 알약 표면에 제품이 아닌 이물질이 붙어 있다.
+        definition_en: foreign material is stuck to the pill surface
+      crack:
+        name_ko: 균열
+        definition: 알약에 금이 가거나 갈라졌다.
+        definition_en: the pill is cracked or split
+      faulty_imprint:
+        name_ko: 인쇄 불량
+        definition: 알약에 인쇄된 글자가 일부 빠졌거나 번지거나 틀렸다.
+        definition_en: the printed text on the pill is missing, smeared, or wrong
+      pill_type:
+        name_ko: 종류 다름
+        definition: 정해진 알약이 아닌 다른 종류의 알약이다.
+        definition_en: it is a different kind of pill than specified
+      scratch:
+        name_ko: 긁힘
+        definition: 알약 표면에 가늘고 긴 긁힌 자국이 있다.
+        definition_en: the pill surface has a thin long scratch
+
+  screw:
+    name_ko: 나사
+    name_en: screw
+    kind: object
+    normal: 밝은 바탕 위의 나사 한 개. 머리, 목, 나사산이 온전하고 끝이 뾰족하다.
+    normal_en: a single screw on a light background with an intact head, neck, thread, and sharp tip
+    defects:
+      manipulated_front:
+        name_ko: 끝단 손상
+        definition: 나사의 뾰족한 끝이 뭉개지거나 깎여 변형됐다.
+        definition_en: the sharp tip of the screw is flattened or ground off
+      scratch_head:
+        name_ko: 머리 긁힘
+        definition: 나사 머리에 긁힌 자국이 있다.
+        definition_en: the screw head has a scratch
+      scratch_neck:
+        name_ko: 목 긁힘
+        definition: 나사 머리 아래 목 부분에 긁힌 자국이 있다.
+        definition_en: the neck below the screw head has a scratch
+      thread_side:
+        name_ko: 측면 나사산 손상
+        definition: 나사산의 옆면이 손상되거나 뭉개졌다.
+        definition_en: the thread on the side of the screw is damaged
+      thread_top:
+        name_ko: 상단 나사산 손상
+        definition: 나사 끝 쪽 나사산이 손상되거나 뭉개졌다.
+        definition_en: the thread near the tip of the screw is damaged
+
+  tile:
+    name_ko: 타일
+    name_en: tile
+    kind: texture
+    normal: 균일한 무늬의 타일 표면. 색과 질감이 고르고 이물이 없다.
+    normal_en: a tile surface with a uniform pattern, even color and texture, and no foreign matter
+    defects:
+      crack:
+        name_ko: 균열
+        definition: 표면에 금이 간 선이 있다.
+        definition_en: the surface has a crack line
+      glue_strip:
+        name_ko: 접착제 띠
+        definition: 표면에 접착제가 띠 모양으로 묻어 있다.
+        definition_en: a strip of glue is on the surface
+      gray_stroke:
+        name_ko: 회색 줄
+        definition: 표면에 회색 선이나 붓자국처럼 그어진 줄이 있다.
+        definition_en: a gray stroke like a brush mark is drawn on the surface
+      oil:
+        name_ko: 기름 얼룩
+        definition: 표면에 기름이 묻어 번들거리거나 어두운 얼룩이 있다.
+        definition_en: an oil stain makes a shiny or dark patch on the surface
+      rough:
+        name_ko: 거친 면
+        definition: 표면 일부가 거칠게 긁히거나 패여 질감이 다르다.
+        definition_en: part of the surface is roughened or gouged with a different texture
+
+  toothbrush:
+    name_ko: 칫솔
+    name_en: toothbrush
+    kind: object
+    normal: 칫솔 머리를 위에서 본 모습. 칫솔모가 가지런하고 빠진 곳이 없다.
+    normal_en: a toothbrush head seen from above with neat bristles and none missing
+    defects:
+      defective:
+        name_ko: 칫솔모 결함
+        definition: 칫솔모가 빠졌거나 뭉개지거나 가지런하지 않다.
+        definition_en: bristles are missing, crushed, or out of order
+
+  transistor:
+    name_ko: 트랜지스터
+    name_en: transistor
+    kind: object
+    normal: 기판 위의 트랜지스터 한 개. 다리 세 개가 곧게 꽂혀 있고 몸체가 온전하며 정해진 자리에 있다.
+    normal_en: a single transistor on a board with three straight leads, an intact case, and in its fixed position
+    defects:
+      bent_lead:
+        name_ko: 다리 휨
+        definition: 트랜지스터 다리가 구부러졌다.
+        definition_en: a transistor lead is bent
+      cut_lead:
+        name_ko: 다리 절단
+        definition: 트랜지스터 다리가 잘려 짧거나 없다.
+        definition_en: a transistor lead is cut short or missing
+      damaged_case:
+        name_ko: 몸체 손상
+        definition: 트랜지스터 몸체가 깨지거나 긁혀 손상됐다.
+        definition_en: the transistor case is broken or scratched
+      misplaced:
+        name_ko: 위치 이탈
+        definition: 트랜지스터가 정해진 자리에서 벗어나거나 돌아가 있거나 빠져 있다.
+        definition_en: the transistor is shifted, rotated, or missing from its position
+
+  wood:
+    name_ko: 목재
+    name_en: wood
+    kind: texture
+    normal: 균일한 나뭇결의 목재 표면. 색이 고르고 상처나 얼룩이 없다.
+    normal_en: a wood surface with uniform grain, even color, and no marks or stains
+    defects:
+      color:
+        name_ko: 색 얼룩
+        definition: 주변과 색이 다른 얼룩이나 변색 부위가 있다.
+        definition_en: a stain or discolored area differs in color from its surroundings
+      combined:
+        name_ko: 복합 결함
+        definition: 두 가지 이상의 결함이 한 이미지에 함께 있다.
+        definition_en: two or more different defects appear together
+      hole:
+        name_ko: 구멍
+        definition: 표면에 뚫린 구멍이 있다.
+        definition_en: the surface has a hole in it
+      liquid:
+        name_ko: 액체 얼룩
+        definition: 액체가 묻어 젖거나 번진 얼룩이 있다.
+        definition_en: a liquid has wetted the surface leaving a spreading stain
+      scratch:
+        name_ko: 긁힘
+        definition: 표면에 가늘고 긴 긁힌 자국이 있다.
+        definition_en: the surface has a thin long scratch
+
+  zipper:
+    name_ko: 지퍼
+    name_en: zipper
+    kind: object
+    normal: 닫힌 지퍼를 위에서 본 모습. 이빨이 빠짐없이 맞물려 있고 양쪽 천이 온전하다.
+    normal_en: a closed zipper seen from above with all teeth meshed and intact fabric on both sides
+    defects:
+      broken_teeth:
+        name_ko: 이빨 파손
+        definition: 지퍼 이빨이 부러지거나 빠졌다.
+        definition_en: zipper teeth are broken or missing
+      combined:
+        name_ko: 복합 결함
+        definition: 두 가지 이상의 결함이 한 이미지에 함께 있다.
+        definition_en: two or more different defects appear together
+      fabric_border:
+        name_ko: 가장자리 천 손상
+        definition: 지퍼 양옆 천의 가장자리가 찢기거나 풀렸다.
+        definition_en: the fabric edge beside the zipper is torn or frayed
+      fabric_interior:
+        name_ko: 안쪽 천 손상
+        definition: 지퍼 양옆 천의 안쪽 면이 찢기거나 손상됐다.
+        definition_en: the fabric next to the zipper is torn or damaged in its interior
+      rough:
+        name_ko: 이빨 거침
+        definition: 지퍼 이빨 표면이 거칠거나 울퉁불퉁하다.
+        definition_en: the zipper teeth have a rough or uneven surface
+      split_teeth:
+        name_ko: 이빨 벌어짐
+        definition: 맞물려야 할 지퍼 이빨이 벌어져 있다.
+        definition_en: zipper teeth that should mesh are split apart
+      squeezed_teeth:
+        name_ko: 이빨 눌림
+        definition: 지퍼 이빨이 눌려 찌그러졌다.
+        definition_en: zipper teeth are squeezed and deformed
