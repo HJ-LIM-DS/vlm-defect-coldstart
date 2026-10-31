@@ -36,26 +36,42 @@ def image_path(r: dict, root: Path, source: str, crop_root: Path) -> Path:
     return root / r["rel_path"]
 
 
+class PixelDataset(torch.utils.data.Dataset):
+    """이미지 디코드와 프로세서 전처리를 DataLoader 워커에서 돌린다(디코드가 병목)."""
+
+    def __init__(self, paths: list[Path], proc):
+        self.paths, self.proc = paths, proc
+
+    def __len__(self):
+        return len(self.paths)
+
+    def __getitem__(self, i):
+        img = Image.open(self.paths[i]).convert("RGB")
+        return self.proc(images=img, return_tensors="pt")["pixel_values"][0]
+
+
 @torch.no_grad()
 def extract(model_name: str, rows: list[dict], root: Path, batch_size: int = 32, device: str = "cuda",
-            source: str = "image", crop_root: Path = Path("data/patchcore")) -> np.ndarray:
+            source: str = "image", crop_root: Path = Path("data/patchcore"), num_workers: int = 4) -> np.ndarray:
     from transformers import AutoImageProcessor, AutoModel
 
     hf_id = MODELS[model_name]
     proc = AutoImageProcessor.from_pretrained(hf_id)
     model = AutoModel.from_pretrained(hf_id).to(device).eval()
-    feats = []
-    for i in range(0, len(rows), batch_size):
-        imgs = [Image.open(image_path(r, root, source, crop_root)).convert("RGB") for r in rows[i:i + batch_size]]
-        inputs = proc(images=imgs, return_tensors="pt").to(device)
+    paths = [image_path(r, root, source, crop_root) for r in rows]
+    loader = torch.utils.data.DataLoader(PixelDataset(paths, proc), batch_size=batch_size, num_workers=num_workers)
+    feats, done = [], 0
+    for pixel_values in loader:
+        pixel_values = pixel_values.to(device)
         if model_name == "dinov2":
-            h = model(**inputs).last_hidden_state
+            h = model(pixel_values=pixel_values).last_hidden_state
             f = torch.cat([h[:, 0], h[:, 1:].mean(1)], dim=1)
         else:
-            f = model.get_image_features(**inputs)
+            f = model.get_image_features(pixel_values=pixel_values)
         f = torch.nn.functional.normalize(f.float(), dim=1)
         feats.append(f.cpu().numpy())
-        print(f"\r{model_name} {min(i + batch_size, len(rows))}/{len(rows)}", end="", flush=True)
+        done += len(pixel_values)
+        print(f"\r{model_name} {done}/{len(rows)}", end="", flush=True)
     print()
     return np.concatenate(feats)
 

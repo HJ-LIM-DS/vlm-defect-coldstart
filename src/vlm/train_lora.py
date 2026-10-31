@@ -237,12 +237,14 @@ def main():
     model = load_model(args.model, args.quant, args.lora_r, args.lora_alpha)
     model.print_trainable_parameters()
 
+    accum = 1 if args.smoke else args.grad_accum
+    total_steps = 20 if args.smoke else int(-(-len(train_rows) // (args.batch_size * accum)) * args.epochs)
     targs = TrainingArguments(
         output_dir=str(args.out), seed=args.seed,
         num_train_epochs=args.epochs, max_steps=20 if args.smoke else -1,
         per_device_train_batch_size=args.batch_size,
-        gradient_accumulation_steps=1 if args.smoke else args.grad_accum,
-        learning_rate=args.lr, lr_scheduler_type="cosine", warmup_ratio=0.03, weight_decay=0.0,
+        gradient_accumulation_steps=accum,
+        learning_rate=args.lr, lr_scheduler_type="cosine", warmup_steps=max(1, int(0.03 * total_steps)), weight_decay=0.0,
         bf16=True, logging_steps=10, save_strategy="no" if args.smoke else "epoch", save_total_limit=2,
         report_to=[], remove_unused_columns=False, dataloader_num_workers=0, gradient_checkpointing=False,
         optim="paged_adamw_8bit" if args.quant == "nf4" else "adamw_torch",

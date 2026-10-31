@@ -63,13 +63,27 @@ TRANSFORM = transforms.Compose([
 ])
 
 
+class ImageFolderDataset(torch.utils.data.Dataset):
+    """경로 목록을 TRANSFORM 텐서로. 이미지 디코드가 병목이라 DataLoader 워커에서 돌린다."""
+
+    def __init__(self, paths: list[Path]):
+        self.paths = paths
+
+    def __len__(self):
+        return len(self.paths)
+
+    def __getitem__(self, i):
+        return TRANSFORM(Image.open(self.paths[i]).convert("RGB"))
+
+
 @torch.no_grad()
-def patch_features(model: Backbone, paths: list[Path], device: str, batch_size: int = 16):
+def patch_features(model: Backbone, paths: list[Path], device: str, batch_size: int = 16, num_workers: int = 4):
     """(N, H*W, C) float32 와 (H, W)."""
+    loader = torch.utils.data.DataLoader(ImageFolderDataset(paths), batch_size=batch_size, num_workers=num_workers,
+                                         persistent_workers=False)
     out, hw = [], None
-    for i in range(0, len(paths), batch_size):
-        x = torch.stack([TRANSFORM(Image.open(p).convert("RGB")) for p in paths[i:i + batch_size]]).to(device)
-        f = model(x)
+    for x in loader:
+        f = model(x.to(device))
         hw = f.shape[-2:]
         out.append(f.permute(0, 2, 3, 1).reshape(f.shape[0], -1, f.shape[1]).cpu())
     return torch.cat(out).numpy(), tuple(hw)
