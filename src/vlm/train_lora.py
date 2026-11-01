@@ -19,7 +19,6 @@
 import argparse
 import contextlib
 import json
-import os
 import time
 from pathlib import Path
 
@@ -27,7 +26,8 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, SequentialSampler
 
-from src.vlm.infer import IMAGE_PIXELS, load_processor, load_rows, open_images, predict_to_file
+from src.vlm.infer import IMAGE_PIXELS, load_processor, load_rows, open_images, predict_to_file, write_heartbeat
+from src.vlm.infer import load_model as load_trained_model
 
 LM_TARGETS = r"model\.language_model\.layers\.\d+\.(self_attn\.(q|k|v|o)_proj|mlp\.(gate|up|down)_proj)"
 
@@ -149,7 +149,8 @@ def make_trainer_cls():
     return AnswerOnlyTrainer
 
 
-def load_model(model_id: str, quant: str | None, lora_r: int, lora_alpha: int):
+def load_model(model_id: str, quant: str | None, lora_r: int, lora_alpha: int, grad_ckpt: bool = True):
+    """gradient checkpointing은 메모리를 아끼는 대신 느리다. 2B처럼 메모리가 남는 설정에서는 끈다."""
     from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
     from transformers import AutoModelForImageTextToText, BitsAndBytesConfig
 
@@ -160,41 +161,30 @@ def load_model(model_id: str, quant: str | None, lora_r: int, lora_alpha: int):
             bnb_4bit_compute_dtype=torch.bfloat16, llm_int8_skip_modules=["visual", "lm_head"])
     model = AutoModelForImageTextToText.from_pretrained(model_id, **kw)
     if quant == "nf4":
-        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=grad_ckpt)
     model = get_peft_model(model, LoraConfig(r=lora_r, lora_alpha=lora_alpha, lora_dropout=0.05,
                                              target_modules=LM_TARGETS, task_type="CAUSAL_LM"))
-    model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
-    model.enable_input_require_grads()
+    if grad_ckpt:
+        model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+        model.enable_input_require_grads()
     model.config.use_cache = False
     return model
 
 
 class HeartbeatCallback:
-    """HEARTBEAT_FILE 환경 변수가 있으면 step마다 진행 상태를 JSON으로 쓴다(감독자가 읽는다)."""
+    """학습 step마다 진행 상태를 하트비트 파일에 쓴다(src.vlm.infer.write_heartbeat, 감독자가 읽는다)."""
 
     def __init__(self):
         from transformers import TrainerCallback
 
-        path = os.environ.get("HEARTBEAT_FILE")
-        self.path = Path(path) if path else None
-
         class _CB(TrainerCallback):
             def on_log(cb, args, state, control, logs=None, **kw):
-                self.write(state.global_step, state.max_steps, logs or {})
+                write_heartbeat(state.global_step, state.max_steps, "train", (logs or {}).get("loss"))
 
             def on_step_end(cb, args, state, control, **kw):
-                if state.global_step % 5 == 0:
-                    self.write(state.global_step, state.max_steps, {})
+                write_heartbeat(state.global_step, state.max_steps, "train")
 
         self.cb = _CB()
-
-    def write(self, step, max_steps, logs):
-        if self.path is None:
-            return
-        tmp = self.path.with_suffix(".tmp")
-        tmp.write_text(json.dumps({"time": time.time(), "step": step, "max_steps": max_steps,
-                                   "loss": logs.get("loss"), "phase": "train"}), encoding="utf-8")
-        tmp.replace(self.path)
 
 
 def latest_checkpoint(out_dir: Path) -> str | None:
@@ -206,8 +196,6 @@ def latest_checkpoint(out_dir: Path) -> str | None:
 
 
 def main():
-    from transformers import TrainingArguments
-
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
@@ -223,10 +211,14 @@ def main():
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--resume", action="store_true", help="출력 폴더의 최신 체크포인트에서 재개")
+    ap.add_argument("--save-steps", type=int, default=50, help="체크포인트 저장 간격(step). 중단 시 잃는 시간을 정한다")
+    ap.add_argument("--no-grad-ckpt", action="store_true", help="gradient checkpointing을 끈다(메모리가 남을 때 더 빠르다)")
     args = ap.parse_args()
 
     args.out.mkdir(parents=True, exist_ok=True)
-    if (args.out / "final" / "adapter_config.json").is_file() and not args.smoke:
+    final = args.out / "final"
+    trained = (final / "adapter_config.json").is_file() and not args.smoke
+    if trained and (args.out / "eval_metrics.json").is_file():
         print("이미 끝난 run:", args.out)
         return
     train_rows, val_rows, eval_rows = (load_rows(args.data / f"{n}.jsonl") for n in ("train", "val", "eval"))
@@ -234,7 +226,26 @@ def main():
         train_rows, val_rows, eval_rows = train_rows[:40], val_rows[:8], eval_rows[:8]
 
     processor = load_processor(args.model)
-    model = load_model(args.model, args.quant, args.lora_r, args.lora_alpha)
+    if trained:
+        # 학습은 끝났고 생성 중에 중단된 run: 어댑터를 읽어 생성만 이어 간다
+        print("학습이 끝난 run, 생성만 수행:", args.out)
+        model = load_trained_model(args.model, str(final), args.quant)
+    else:
+        model = train(args, processor, train_rows)
+
+    for name, rows in (("val", val_rows), ("eval", eval_rows)):
+        m = predict_to_file(model, processor, rows, args.out / f"{name}_predictions.jsonl", args.gen_batch_size,
+                            resume=args.resume, phase=f"gen_{name}")
+        (args.out / f"{name}_metrics.json").write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(name, json.dumps(m, ensure_ascii=False))
+    print(f"끝: {args.out}")
+
+
+def train(args, processor, train_rows: list[dict]):
+    """LoRA를 학습해 final/ 에 저장하고, 생성에 쓸 수 있게 학습 메모리를 비운 모델을 돌려준다."""
+    from transformers import TrainingArguments
+
+    model = load_model(args.model, args.quant, args.lora_r, args.lora_alpha, grad_ckpt=not args.no_grad_ckpt)
     model.print_trainable_parameters()
 
     accum = 1 if args.smoke else args.grad_accum
@@ -245,7 +256,8 @@ def main():
         per_device_train_batch_size=args.batch_size,
         gradient_accumulation_steps=accum,
         learning_rate=args.lr, lr_scheduler_type="cosine", warmup_steps=max(1, int(0.03 * total_steps)), weight_decay=0.0,
-        bf16=True, logging_steps=10, save_strategy="no" if args.smoke else "epoch", save_total_limit=2,
+        bf16=True, logging_steps=10, save_strategy="no" if args.smoke else "steps", save_steps=args.save_steps,
+        save_total_limit=2,
         report_to=[], remove_unused_columns=False, dataloader_num_workers=0, gradient_checkpointing=False,
         optim="paged_adamw_8bit" if args.quant == "nf4" else "adamw_torch",
     )
@@ -265,22 +277,20 @@ def main():
     log = {
         "model": args.model, "quant": args.quant, "lora_r": args.lora_r, "lora_alpha": args.lora_alpha,
         "lr": args.lr, "epochs": args.epochs, "batch_size": args.batch_size, "grad_accum": args.grad_accum,
+        "grad_ckpt": not args.no_grad_ckpt, "save_steps": args.save_steps,
         "image_pixels": IMAGE_PIXELS, "seed": args.seed, "smoke": args.smoke, "resumed_from": resume,
         "n_train": len(train_rows), "train_seconds": round(train_sec, 1), "max_vram_gb": round(max_vram, 2),
         "loss_history": [{"step": h["step"], "loss": h["loss"]} for h in trainer.state.log_history if "loss" in h],
     }
     (args.out / "train_log.json").write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"학습 끝: {train_sec / 3600:.2f}시간, 최대 VRAM {max_vram:.2f}GB")
 
     # 생성 전에 학습용 메모리를 비운다(VRAM 경합으로 생성이 느려지는 것을 막는다)
     model.config.use_cache = True
     model.eval()
     del trainer
     torch.cuda.empty_cache()
-    for name, rows in (("val", val_rows), ("eval", eval_rows)):
-        m = predict_to_file(model, processor, rows, args.out / f"{name}_predictions.jsonl", args.gen_batch_size)
-        (args.out / f"{name}_metrics.json").write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(name, json.dumps(m, ensure_ascii=False))
-    print(f"끝: {args.out} (학습 {train_sec / 3600:.2f}시간, 최대 VRAM {max_vram:.2f}GB)")
+    return model
 
 
 if __name__ == "__main__":

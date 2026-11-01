@@ -13,8 +13,8 @@ bitsandbytes==0.50.2
 safetensors==0.8.0
 huggingface_hub==1.20.1
 qwen-vl-utils==0.0.14
-datasets==5.0.0
 sentencepiece==0.2.2
+protobuf==7.36.2
 einops==0.8.2
 timm==0.9.7
 
@@ -23,7 +23,6 @@ pandas==3.0.3
 numpy==2.4.4
 scipy==1.17.1
 scikit-learn==1.9.0
-pyarrow==24.0.0
 matplotlib==3.11.0
 Jinja2==3.1.6
 opencv-python==5.0.0.93

@@ -16,7 +16,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-from src.vlm.infer import generate, load_model, load_processor
+from src.vlm.infer import generate, load_model, load_processor, write_heartbeat
 from src.vlm.prompts import build_probe_messages
 
 
@@ -32,15 +32,34 @@ def main():
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--resume", action="store_true", help="부분 파일에 이미 있는 이미지는 건너뛴다")
     args = ap.parse_args()
 
     with open(args.index, encoding="utf-8") as f:
         rows = [r for r in csv.DictReader(f) if r["label"] == "defect"]
     rows = rows[:args.limit] if args.limit else rows
-    items = [{"messages": build_probe_messages((args.root / r["rel_path"]).as_posix())} for r in rows]
+    # 배치마다 부분 파일에 덧붙여, 중단되면 --resume 으로 이어 간다
+    partial = args.out.with_suffix(".partial.jsonl")
+    done: dict[str, str] = {}
+    if args.resume and partial.is_file():
+        for line in partial.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                rec = json.loads(line)
+                done[rec["image_id"]] = rec["output"]
+    todo = [r for r in rows if r["image_id"] not in done]
     processor = load_processor(args.model)
     model = load_model(args.model, None)
-    outputs = generate(model, processor, items, batch_size=args.batch_size, max_new_tokens=16)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    with open(partial, "a" if done else "w", encoding="utf-8") as f:
+        for i in range(0, len(todo), args.batch_size):
+            write_heartbeat(len(done) + i, len(rows), "probe")
+            batch = todo[i:i + args.batch_size]
+            items = [{"messages": build_probe_messages((args.root / r["rel_path"]).as_posix())} for r in batch]
+            for r, o in zip(batch, generate(model, processor, items, batch_size=args.batch_size, max_new_tokens=16)):
+                done[r["image_id"]] = o
+                f.write(json.dumps({"image_id": r["image_id"], "output": o}, ensure_ascii=False) + "\n")
+            f.flush()
+    outputs = [done[r["image_id"]] for r in rows]
 
     hits = defaultdict(list)
     records = []

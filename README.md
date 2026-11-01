@@ -7,7 +7,7 @@
 근거: 캡슐 껍질에 금이 간 선이 보인다
 ```
 
-> 상태(2026-11-01): 설계 확정. 데이터 인덱스, 결함 사전, 제품 분할, 가설과 판정 기준을 결과 전에 커밋했다. 모델 결과는 아직 없다.
+> 상태(2026-11-01): 비-VLM 기준선 계산 완료([`reports/tables/summary.md`](reports/tables/summary.md)). 4B zero-shot과 2B LoRA 5-fold 학습이 진행 중이다. 가설 판정에 쓰는 4B QLoRA 결과는 아직 없다.
 
 ## 무엇을 재는가
 
@@ -63,6 +63,17 @@ docker compose run --rm gpu python -m src.vlm.train_lora --data data/sft/f1 --ou
 ```
 
 Windows에서 GPU 컨테이너는 WSL2 파일 공유를 거치므로 이미지 로딩이 로컬보다 느릴 수 있다. 속도가 중요하면 `data/`를 WSL 파일 시스템 안으로 복사한다.
+
+## 학습 실행
+
+학습과 추론은 대기열에 넣고 감독자가 하나씩 실행한다. 감독자는 하트비트가 멈추면 프로세스를 끝내고 체크포인트에서 재개하며, 같은 작업이 두 번 실패하면 다음 작업으로 넘어간다. 모니터 창은 30초마다 학습과 생성의 진행 막대를 보인다.
+
+```
+python -m ops.queue stage1 stage2 --gen-batch 8
+powershell -ExecutionPolicy Bypass -File ops/start.ps1 -Python <python.exe>
+```
+
+`ops/schedule.ps1 -Register`는 Windows 작업 스케줄러에 30분마다 감독자를 되살리는 작업을 넣는다. 학습이 모두 끝나면 `python -m ops.cleanup`이 예약 작업과 중간 체크포인트를 지운다.
 
 ## 인용
 
