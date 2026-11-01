@@ -1,0 +1,14 @@
+# CPU 이미지: 테스트, 인덱스와 분할 생성, 예측 원본으로 표 다시 계산. GPU가 없는 환경(CI, 검토자)용.
+FROM python:3.11-slim
+
+ENV PYTHONUTF8=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1
+RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /work
+COPY requirements.txt .
+RUN pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu \
+    && pip install -r requirements.txt
+
+COPY . .
+CMD ["python", "-m", "pytest", "-q"]

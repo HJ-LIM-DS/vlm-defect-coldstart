@@ -48,12 +48,21 @@ python -m src.data.splits --out data/splits.csv
 
 ## 환경
 
-Windows 11, Python 3.11, CUDA 12.4. `requirements.txt`의 버전을 그대로 쓴다.
+실험은 Windows 11, Python 3.11, CUDA 12.4의 로컬 가상환경에서 돌렸다. `requirements.txt`의 버전을 그대로 쓴다.
 
 ```
 pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu124
 pip install -r requirements.txt
 ```
+
+같은 버전을 담은 Docker 이미지 두 개를 재현용으로 둔다. CPU 이미지는 테스트와 표 재계산용이고 GitHub Actions가 매 푸시마다 빌드해 테스트를 돌린다. GPU 이미지는 학습과 추론용이며 기본 이미지에 torch 2.5.1+cu124가 들어 있다.
+
+```
+docker compose run --rm test
+docker compose run --rm gpu python -m src.vlm.train_lora --data data/sft/f1 --out runs/f1_2b
+```
+
+Windows에서 GPU 컨테이너는 WSL2 파일 공유를 거치므로 이미지 로딩이 로컬보다 느릴 수 있다. 속도가 중요하면 `data/`를 WSL 파일 시스템 안으로 복사한다.
 
 ## 인용
 

@@ -1,0 +1,29 @@
+# 사용 예
+#   docker compose run --rm test                       # CPU 이미지에서 테스트
+#   docker compose run --rm gpu python -m src.vlm.train_lora --data data/sft/f1 --out runs/f1_2b
+# 데이터(data/), 산출물(runs/, reports/), 모델 캐시는 호스트 폴더를 그대로 마운트한다.
+# Windows에서는 WSL2 파일 공유를 거치므로 이미지 로딩이 느릴 수 있다. 학습 속도가 중요하면 data/ 를 WSL 안으로 복사한다.
+services:
+  test:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.cpu
+    image: vlm-defect-coldstart:cpu
+    volumes:
+      - ./data:/work/data
+      - ./reports:/work/reports
+  gpu:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.gpu
+    image: vlm-defect-coldstart:gpu
+    gpus: all
+    shm_size: "8gb"
+    environment:
+      - HF_HOME=/cache/huggingface
+      - HF_HUB_OFFLINE=${HF_HUB_OFFLINE:-0}
+    volumes:
+      - ./data:/work/data
+      - ./runs:/work/runs
+      - ./reports:/work/reports
+      - ${HF_CACHE_DIR:-~/.cache/huggingface}:/cache/huggingface

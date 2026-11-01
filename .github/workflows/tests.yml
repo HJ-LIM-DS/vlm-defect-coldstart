@@ -1,0 +1,20 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  cpu-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: CPU 이미지 빌드
+        run: docker build -f docker/Dockerfile.cpu -t vlm-defect-coldstart:cpu .
+      - name: 테스트
+        run: docker run --rm vlm-defect-coldstart:cpu
+      - name: 분할이 저장소 파일과 같은지 확인
+        run: |
+          docker run --rm vlm-defect-coldstart:cpu sh -c "python -m src.data.splits --out /tmp/s.csv >/dev/null && cat /tmp/s.csv" > /tmp/splits.csv
+          diff /tmp/splits.csv data/splits.csv

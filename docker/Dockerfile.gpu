@@ -1,0 +1,13 @@
+# GPU 이미지: LoRA 학습, 추론, PatchCore, 특징 추출. 기본 이미지에 torch 2.5.1+cu124가 들어 있어 로컬 환경과 같은 버전이다.
+FROM pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+
+ENV PYTHONUTF8=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1 HF_HOME=/cache/huggingface
+RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /work
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+CMD ["python", "-c", "import torch; print('cuda', torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else '')"]

@@ -1,0 +1,15 @@
+.git
+.claude
+CLAUDE.md
+task.txt
+references/
+notes/
+data/
+runs/
+outputs/
+checkpoints/
+ops/runtime/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
