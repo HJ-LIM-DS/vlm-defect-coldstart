@@ -47,12 +47,13 @@ def main():
                 rec = json.loads(line)
                 done[rec["image_id"]] = rec["output"]
     todo = [r for r in rows if r["image_id"] not in done]
+    n_prev = len(done)  # 재개 전에 끝난 수. done 은 아래에서 계속 늘어나므로 미리 고정한다
     processor = load_processor(args.model)
     model = load_model(args.model, None)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with open(partial, "a" if done else "w", encoding="utf-8") as f:
         for i in range(0, len(todo), args.batch_size):
-            write_heartbeat(len(done) + i, len(rows), "probe")
+            write_heartbeat(n_prev + i, len(rows), "probe")
             batch = todo[i:i + args.batch_size]
             items = [{"messages": build_probe_messages((args.root / r["rel_path"]).as_posix())} for r in batch]
             for r, o in zip(batch, generate(model, processor, items, batch_size=args.batch_size, max_new_tokens=16)):

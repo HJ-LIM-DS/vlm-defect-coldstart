@@ -120,10 +120,11 @@ def predict_to_file(model, processor, rows: list[dict], out_path: Path, batch_si
                 rec = json.loads(line)
                 done[rec["image_id"]] = rec
     todo = [r for r in rows if r["image_id"] not in done]
+    n_prev = len(done)  # 재개 전에 끝난 수. done 은 아래에서 계속 늘어나므로 미리 고정한다
     t0 = time.time()
     with open(out_path, "a" if done else "w", encoding="utf-8") as f:
         for i in range(0, len(todo), batch_size):
-            write_heartbeat(len(done) + i, len(rows), phase)
+            write_heartbeat(n_prev + i, len(rows), phase)
             batch = todo[i:i + batch_size]
             for r, o in zip(batch, generate(model, processor, batch, batch_size=batch_size)):
                 done[r["image_id"]] = to_record(r, o, lex)
