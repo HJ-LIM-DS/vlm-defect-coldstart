@@ -6,10 +6,12 @@
 단계
     stage1   사전학습 노출 탐침(4B), 4B zero-shot 5-fold(NF4, 결함 사전 포함 프롬프트)
     stage2   2B LoRA 5-fold, 입력 구성 네 가지(전체, crop 없음, 참조 없음, 검사 이미지만)
-    stage2x  2B LoRA 5-fold, 정의 없는 사전(예산이 남을 때)
+    stage2x  2B LoRA 5-fold, 정의 없는 사전(정의 문장의 효과)
+    stage3   4B 스모크, (선별 구성의) 4B zero-shot 5-fold, 2B zero-shot 5-fold(bf16, 2B LoRA와 같은 기저), 4B QLoRA 5-fold
 
 사용법:
     python -m ops.queue stage1 stage2 --out ops/runtime/queue.json
+    python -m ops.queue stage1 stage2 stage3 stage2x --gen-batch 8 --l4b-variant full
     python -m ops.queue stage1 stage2 --list
 """
 
@@ -63,6 +65,40 @@ def stage2x(gen_batch: int) -> list[dict]:
             for k in FOLDS]
 
 
+def stage3(gen_batch: int, variant: str = "full") -> list[dict]:
+    """4B 스모크(이미지 3장 입력의 VRAM과 속도 실측), 2B zero-shot 5-fold, 4B QLoRA 5-fold.
+
+    2B zero-shot은 2B LoRA와 같은 bf16 기저 모델이라 적응 효과를 모델 크기와 분리해 보여 준다.
+    4B QLoRA의 입력 구성은 2단계 선별 결과(variant)를 따른다. 스모크를 맨 앞에 두어
+    4B 설정 오류를 zero-shot이 돌아가는 동안 고칠 수 있게 한다.
+    선별 구성이 전체 입력이 아니면 4B zero-shot도 같은 입력으로 다시 돌려, 적응 전후 비교가 입력 차이와 섞이지 않게 한다.
+    """
+    suffix = VARIANTS_2B[variant]
+    smoke_out = "runs/smoke_sup/smoke_4b"
+    jobs = [job("smoke_4b",
+                ["-m", "src.vlm.train_lora", "--data", f"data/sft/f1{suffix}", "--model", MODEL_4B, "--quant", "nf4",
+                 "--out", smoke_out, "--smoke", "--gen-batch-size", str(GEN_BATCH_4B)],
+                [f"{smoke_out}/eval_metrics.json"], ["--resume"])]
+    if suffix:
+        for k in FOLDS:
+            out = f"runs/z4b{suffix}/f{k}_predictions.jsonl"
+            metrics = f"runs/z4b{suffix}/f{k}_metrics.json"
+            jobs.append(job(f"z4b{suffix}_f{k}",
+                            ["-m", "src.vlm.infer", "--data", f"data/sft/f{k}{suffix}/eval.jsonl", "--model", MODEL_4B,
+                             "--quant", "nf4", "--batch-size", str(GEN_BATCH_4B), "--out", out, "--metrics-out", metrics],
+                            [out, metrics], ["--resume"]))
+    for k in FOLDS:
+        out = f"runs/z2b/f{k}_predictions.jsonl"
+        metrics = f"runs/z2b/f{k}_metrics.json"
+        jobs.append(job(f"z2b_f{k}",
+                        ["-m", "src.vlm.infer", "--data", f"data/sft/f{k}{suffix}/eval.jsonl", "--model", MODEL_2B,
+                         "--batch-size", str(gen_batch), "--out", out, "--metrics-out", metrics],
+                        [out, metrics], ["--resume"]))
+    jobs += [train_job(f"l4b_f{k}", f"data/sft/f{k}{suffix}", f"runs/l4b/f{k}", MODEL_4B, GEN_BATCH_4B, quant="nf4")
+             for k in FOLDS]
+    return jobs
+
+
 def smoke(gen_batch: int) -> list[dict]:
     """감독자 경로 점검용 20 step 스모크 세 가지. 본 대기열을 돌리기 전에 설정 오류를 거르고 속도 설정을 고른다."""
     variants = {"smoke_2b": [], "smoke_2b_nockpt": ["--no-grad-ckpt"],
@@ -76,7 +112,7 @@ def smoke(gen_batch: int) -> list[dict]:
     return jobs
 
 
-STAGES = {"smoke": smoke, "stage1": stage1, "stage2": stage2, "stage2x": stage2x}
+STAGES = {"smoke": smoke, "stage1": stage1, "stage2": stage2, "stage2x": stage2x, "stage3": stage3}
 
 
 def main():
@@ -84,12 +120,14 @@ def main():
     ap.add_argument("stages", nargs="+", choices=sorted(STAGES))
     ap.add_argument("--out", type=Path, default=Path("ops/runtime/queue.json"))
     ap.add_argument("--gen-batch", type=int, default=4, help="생성(추론) 배치 크기")
+    ap.add_argument("--l4b-variant", choices=sorted(VARIANTS_2B), default="full",
+                    help="stage3 의 4B QLoRA 입력 구성(2단계 선별 결과)")
     ap.add_argument("--list", action="store_true", help="파일을 쓰지 않고 작업 ID만 보인다")
     args = ap.parse_args()
 
     jobs = []
     for s in args.stages:
-        jobs.extend(STAGES[s](args.gen_batch))
+        jobs.extend(stage3(args.gen_batch, args.l4b_variant) if s == "stage3" else STAGES[s](args.gen_batch))
     ids = [j["id"] for j in jobs]
     if len(ids) != len(set(ids)):
         raise SystemExit("작업 ID 중복")

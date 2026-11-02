@@ -160,6 +160,166 @@
     "zipper": 0.8235294117647058
    }
   },
+  "z4b": {
+   "n_defect": 1228,
+   "excluded_products": [
+    "toothbrush"
+   ],
+   "type_acc_product_mean": 0.49631339952529896,
+   "type_acc_image_mean": 0.49022801302931596,
+   "macro_f1": 0.44180092644202795,
+   "type_acc_shared": 0.504657499481474,
+   "n_shared": 700,
+   "type_acc_unique": 0.4404525298342964,
+   "n_unique": 528,
+   "n_good": 467,
+   "normal_rate": 0.20342612419700215,
+   "format_rate": 0.9976811594202899,
+   "per_product": {
+    "bottle": 0.3968253968253968,
+    "cable": 0.34782608695652173,
+    "capsule": 0.5871559633027523,
+    "carpet": 0.6404494382022472,
+    "grid": 0.3684210526315789,
+    "hazelnut": 0.5857142857142857,
+    "leather": 0.717391304347826,
+    "metal_nut": 0.4731182795698925,
+    "pill": 0.2978723404255319,
+    "screw": 0.5042016806722689,
+    "tile": 0.5595238095238095,
+    "transistor": 0.4,
+    "wood": 0.6833333333333333,
+    "zipper": 0.3865546218487395
+   }
+  },
+  "2b_full": {
+   "n_defect": 1228,
+   "excluded_products": [
+    "toothbrush"
+   ],
+   "type_acc_product_mean": 0.5159807977611292,
+   "type_acc_image_mean": 0.504885993485342,
+   "macro_f1": 0.47189570954429466,
+   "type_acc_shared": 0.5782443166649892,
+   "n_shared": 700,
+   "type_acc_unique": 0.4300242853997809,
+   "n_unique": 528,
+   "n_good": 467,
+   "normal_rate": 0.7173447537473233,
+   "format_rate": 1.0,
+   "per_product": {
+    "bottle": 0.5238095238095238,
+    "cable": 0.2826086956521739,
+    "capsule": 0.5504587155963303,
+    "carpet": 0.6741573033707865,
+    "grid": 0.49122807017543857,
+    "hazelnut": 0.5857142857142857,
+    "leather": 0.7065217391304348,
+    "metal_nut": 0.5376344086021505,
+    "pill": 0.44680851063829785,
+    "screw": 0.35294117647058826,
+    "tile": 0.39285714285714285,
+    "transistor": 0.5,
+    "wood": 0.7,
+    "zipper": 0.4789915966386555
+   }
+  },
+  "2b_nocrop": {
+   "n_defect": 1228,
+   "excluded_products": [
+    "toothbrush"
+   ],
+   "type_acc_product_mean": 0.501377081408657,
+   "type_acc_image_mean": 0.4804560260586319,
+   "macro_f1": 0.4611068304452835,
+   "type_acc_shared": 0.5234444635832568,
+   "n_shared": 700,
+   "type_acc_unique": 0.4576112916408963,
+   "n_unique": 528,
+   "n_good": 467,
+   "normal_rate": 0.7473233404710921,
+   "format_rate": 1.0,
+   "per_product": {
+    "bottle": 0.6031746031746031,
+    "cable": 0.29347826086956524,
+    "capsule": 0.47706422018348627,
+    "carpet": 0.6741573033707865,
+    "grid": 0.45614035087719296,
+    "hazelnut": 0.6142857142857143,
+    "leather": 0.7282608695652174,
+    "metal_nut": 0.46236559139784944,
+    "pill": 0.3546099290780142,
+    "screw": 0.2773109243697479,
+    "tile": 0.5,
+    "transistor": 0.5,
+    "wood": 0.6666666666666666,
+    "zipper": 0.4117647058823529
+   }
+  },
+  "2b_noref": {
+   "n_defect": 1228,
+   "excluded_products": [
+    "toothbrush"
+   ],
+   "type_acc_product_mean": 0.5185054942846821,
+   "type_acc_image_mean": 0.511400651465798,
+   "macro_f1": 0.47457106660306597,
+   "type_acc_shared": 0.57239356943426,
+   "n_shared": 700,
+   "type_acc_unique": 0.4417919025578011,
+   "n_unique": 528,
+   "n_good": 467,
+   "normal_rate": 0.5910064239828694,
+   "format_rate": 1.0,
+   "per_product": {
+    "bottle": 0.5079365079365079,
+    "cable": 0.2391304347826087,
+    "capsule": 0.6422018348623854,
+    "carpet": 0.6741573033707865,
+    "grid": 0.43859649122807015,
+    "hazelnut": 0.5142857142857142,
+    "leather": 0.7717391304347826,
+    "metal_nut": 0.5161290322580645,
+    "pill": 0.46099290780141844,
+    "screw": 0.40336134453781514,
+    "tile": 0.42857142857142855,
+    "transistor": 0.525,
+    "wood": 0.7,
+    "zipper": 0.4369747899159664
+   }
+  },
+  "2b_img": {
+   "n_defect": 1228,
+   "excluded_products": [
+    "toothbrush"
+   ],
+   "type_acc_product_mean": 0.47448430982811374,
+   "type_acc_image_mean": 0.4568403908794788,
+   "macro_f1": 0.42534106155891643,
+   "type_acc_shared": 0.5351020740481732,
+   "n_shared": 700,
+   "type_acc_unique": 0.4261227128668684,
+   "n_unique": 528,
+   "n_good": 467,
+   "normal_rate": 0.569593147751606,
+   "format_rate": 1.0,
+   "per_product": {
+    "bottle": 0.6666666666666666,
+    "cable": 0.20652173913043478,
+    "capsule": 0.44954128440366975,
+    "carpet": 0.6404494382022472,
+    "grid": 0.43859649122807015,
+    "hazelnut": 0.5428571428571428,
+    "leather": 0.7282608695652174,
+    "metal_nut": 0.5161290322580645,
+    "pill": 0.375886524822695,
+    "screw": 0.2689075630252101,
+    "tile": 0.38095238095238093,
+    "transistor": 0.4,
+    "wood": 0.6666666666666666,
+    "zipper": 0.36134453781512604
+   }
+  },
   "b_kshot_k1": {
    "k": 1,
    "reps": 20,

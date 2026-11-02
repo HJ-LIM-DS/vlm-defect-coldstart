@@ -27,3 +27,4 @@ __pycache__/
 
 # 포트폴리오 빌드 중간 산출물
 reports/portfolio/*.html
+*.partial.jsonl

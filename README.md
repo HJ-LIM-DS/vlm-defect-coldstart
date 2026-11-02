@@ -7,7 +7,7 @@
 근거: 캡슐 껍질에 금이 간 선이 보인다
 ```
 
-> 상태(2026-11-01): 비-VLM 기준선 계산 완료([`reports/tables/summary.md`](reports/tables/summary.md)). 4B zero-shot과 2B LoRA 5-fold 학습이 진행 중이다. 가설 판정에 쓰는 4B QLoRA 결과는 아직 없다.
+> 상태(2026-11-02): 1단계와 2단계 완료([`reports/tables/summary.md`](reports/tables/summary.md)). 2B LoRA 최고 구성(참조 없음)의 유형 정확도 제품 평균은 51.9로, 비-VLM 라벨 0장 최고치 36.2를 넘어 3단계로 간다. 4B QLoRA 5-fold, 같은 입력의 4B와 2B zero-shot, 2B 정의 없음 변형이 진행 중이다. 가설 판정에 쓰는 4B QLoRA 결과는 아직 없다.
 
 ## 무엇을 재는가
 
