@@ -7,7 +7,27 @@
 근거: 캡슐 껍질에 금이 간 선이 보인다
 ```
 
-> 상태(2026-11-03): 1단계부터 3단계까지 학습과 평가 완료([`reports/tables/summary.md`](reports/tables/summary.md)). 4B QLoRA(참조 없음 입력)의 유형 정확도 제품 평균은 56.9다. 비-VLM 라벨 0장 기준선 최고치 36.2보다 20.7점 높다. 95% 구간은 [17.2, 24.3]이다. 같은 입력의 4B zero-shot 50.3보다 6.6점 높다. 라벨 1장 분류기 59.3이 이미 이를 넘어 교차점 k는 1이다. 결과 정리와 그림, 실패 사례 분석은 진행 중이다.
+## 결과
+
+자세한 결과와 가설 판정은 [`docs/results.md`](docs/results.md)에 있다. 표는 [`reports/tables/summary.md`](reports/tables/summary.md), 실패 사례는 [`reports/tables/failures.md`](reports/tables/failures.md)다.
+
+![라벨 0장 비교](reports/figures/zero_label.png)
+
+| 방법 | 새 제품 라벨 | 유형 정확도(제품 평균) | 공통 유형 | 고유 유형 | 정상 판정률 |
+|---|---|---|---|---|---|
+| B-교차(교차 제품 분류기) | 0 | 24.7 | 54.2 | 0.0 | |
+| B-CLIP(SigLIP 텍스트 매칭) | 0 | 36.2 | 37.9 | 28.1 | |
+| Z(4B zero-shot, 같은 입력) | 0 | 50.3 | 49.7 | 45.4 | 27.8 |
+| L(4B QLoRA) | 0 | 56.9 | 56.2 | 49.6 | 72.6 |
+| B-1장 | 유형당 1 | 59.3 | 50.0 | 69.7 | |
+| B-전체 | 전부 | 87.6 | 79.0 | 92.0 | |
+
+- 라벨 0장에서 L은 비-VLM 최고치보다 20.7점 높다. 95% 쌍대 구간은 [17.2, 24.3]이다.
+- 유형당 라벨 1장이면 분류기가 L을 넘는다. 교차점 k는 1이다.
+- 적응의 이득은 공통 유형의 어휘 전이와 정상 판정에서 온다. 고유 유형의 이득은 4.2점으로 구간이 0을 걸친다.
+- 정의 문장을 빼면 5.9점 떨어지지만 고유 유형에 집중되지 않아, 정의를 읽고 새 유형을 추론한다는 가설은 기각했다.
+
+![교차점](reports/figures/crossover.png)
 
 ## 무엇을 재는가
 
@@ -73,7 +93,17 @@ python -m ops.queue stage1 stage2 --gen-batch 8
 powershell -ExecutionPolicy Bypass -File ops/start.ps1 -Python <python.exe>
 ```
 
-`ops/schedule.ps1 -Register`는 Windows 작업 스케줄러에 30분마다 감독자를 되살리는 작업을 넣는다. 학습이 모두 끝나면 `python -m ops.cleanup`이 예약 작업과 중간 체크포인트를 지운다.
+`ops/schedule.ps1 -Register`는 Windows 작업 스케줄러에 30분마다 감독자를 되살리는 작업을 넣는다. 학습이 모두 끝나면 `python -m ops.cleanup`이 예약 작업과 중간 체크포인트를 지운다. 관리자 권한으로 등록한 예약 작업은 같은 권한으로 지워야 한다.
+
+## 표와 그림
+
+```
+python -m src.report.aggregate --vlm l4b="runs/l4b/f*/eval_predictions.jsonl" --pair l4b:b_clip --pair-scope l4b:z4b_noref
+python -m src.report.figures
+python -m src.report.failures --main l4b="runs/l4b/f*/eval_predictions.jsonl" --ref z4b_noref="runs/z4b_noref/f*_predictions.jsonl"
+```
+
+전체 명령은 `docs/results.md`의 마지막 절에 있다.
 
 ## 인용
 
